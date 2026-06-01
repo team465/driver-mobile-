@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -11,6 +11,7 @@ import {
 import { Redirect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDriver } from '@/contexts/DriverContext';
 import { JihColors } from '@/constants/theme';
@@ -20,58 +21,81 @@ import EarningsScreen   from '@/components/driver/EarningsScreen';
 import ProfileScreen    from '@/components/driver/ProfileScreen';
 import SupportScreen    from '@/components/driver/SupportScreen';
 
-// ── Tab definitions (mirrors DriverDashboard.tsx tabs) ───────────────────────
+type AppStatus = 'loading' | 'no_user' | 'no_application' | 'pending' | 'rejected' | 'approved';
+type TabKey    = 'requests' | 'active' | 'earnings' | 'profile' | 'support';
 
 const TABS = [
-  { key: 'requests',  label: 'Requests',  icon: '📡' },
-  { key: 'active',    label: 'Active',    icon: '🗺️' },
-  { key: 'earnings',  label: 'Earnings',  icon: '💵' },
-  { key: 'profile',   label: 'Profile',   icon: '👤' },
-  { key: 'support',   label: 'Support',   icon: '🎧' },
-] as const;
-
-type TabKey = (typeof TABS)[number]['key'];
-
-// ── Dashboard ─────────────────────────────────────────────────────────────────
+  { key: 'requests' as TabKey, label: 'Requests', icon: '📡' },
+  { key: 'active'   as TabKey, label: 'Active',   icon: '🗺️' },
+  { key: 'earnings' as TabKey, label: 'Earnings', icon: '💵' },
+  { key: 'profile'  as TabKey, label: 'Profile',  icon: '👤' },
+  { key: 'support'  as TabKey, label: 'Support',  icon: '🎧' },
+];
 
 export default function DriverDashboard() {
-  const { user, loading, signOut } = useAuth();
-  const { activeRideId }           = useDriver();
-  const [activeTab, setActiveTab]  = useState<TabKey>('requests');
+  const { user, loading: authLoading, role, signOut } = useAuth();
+  const { activeRideId }          = useDriver();
+  const [activeTab, setActiveTab] = useState<TabKey>('requests');
+  const [appStatus, setAppStatus] = useState<AppStatus>('loading');
 
-  // Show loading spinner while session hydrates
-  if (loading) {
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      setAppStatus('no_user');
+      return;
+    }
+
+    // Approved driver — no need to check application
+    if (role === 'driver') {
+      setAppStatus('approved');
+      return;
+    }
+
+    // Not yet approved — check application status
+    (async () => {
+      const { data: app } = await supabase
+        .from('driver_applications')
+        .select('status')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!app || app.status === 'draft') setAppStatus('no_application');
+      else if (app.status === 'pending')  setAppStatus('pending');
+      else if (app.status === 'rejected') setAppStatus('rejected');
+      else if (app.status === 'approved') setAppStatus('approved');
+      else setAppStatus('no_application');
+    })();
+  }, [user, authLoading, role]);
+
+  // ── Route ──────────────────────────────────────────────────────────────────
+
+  if (appStatus === 'loading') {
     return (
       <View style={s.center}>
-        <ActivityIndicator size="large" color={JihColors.gold} />
+        <StatusBar style="light" />
+        <Text style={s.loadingLogo}>jih</Text>
+        <ActivityIndicator color={JihColors.gold} size="large" />
       </View>
     );
   }
 
-  // Redirect unauthenticated users to login
-  if (!user) return <Redirect href="/login" />;
+  if (appStatus === 'no_user')        return <Redirect href="/welcome" />;
+  if (appStatus === 'no_application') return <Redirect href="/apply" />;
+  if (appStatus === 'pending')        return <Redirect href="/pending" />;
+  if (appStatus === 'rejected')       return <Redirect href="/rejected" />;
+
+  // ── Approved driver dashboard ──────────────────────────────────────────────
 
   const renderTab = () => {
     switch (activeTab) {
-      case 'requests':
-        return (
-          <RequestsScreen
-            onRideAccepted={() => setActiveTab('active')}
-          />
-        );
-      case 'active':
-        return (
-          <ActiveRideScreen
-            onRideComplete={() => setActiveTab('requests')}
-            onNoRide={() => setActiveTab('requests')}
-          />
-        );
-      case 'earnings':
-        return <EarningsScreen />;
-      case 'profile':
-        return <ProfileScreen />;
-      case 'support':
-        return <SupportScreen />;
+      case 'requests': return <RequestsScreen onRideAccepted={() => setActiveTab('active')} />;
+      case 'active':   return <ActiveRideScreen onRideComplete={() => setActiveTab('requests')} onNoRide={() => setActiveTab('requests')} />;
+      case 'earnings': return <EarningsScreen />;
+      case 'profile':  return <ProfileScreen />;
+      case 'support':  return <SupportScreen />;
     }
   };
 
@@ -79,7 +103,6 @@ export default function DriverDashboard() {
     <View style={s.root}>
       <StatusBar style="light" />
 
-      {/* Top nav — mirrors DriverDashboard nav bar */}
       <SafeAreaView style={s.navWrap}>
         <View style={s.nav}>
           <Text style={s.logo}>jih</Text>
@@ -89,121 +112,44 @@ export default function DriverDashboard() {
         </View>
       </SafeAreaView>
 
-      {/* Tab content */}
       <View style={s.content}>{renderTab()}</View>
 
-      {/* Bottom tab bar */}
       <View style={s.tabBar}>
         {TABS.map(tab => {
-          const active = activeTab === tab.key;
-          // Show a dot on the Active tab when there's an active ride
+          const active  = activeTab === tab.key;
           const showDot = tab.key === 'active' && !!activeRideId;
           return (
-            <Pressable
-              key={tab.key}
-              style={s.tabItem}
-              onPress={() => setActiveTab(tab.key)}
-            >
+            <Pressable key={tab.key} style={s.tabItem} onPress={() => setActiveTab(tab.key)}>
               <View>
                 <Text style={s.tabIcon}>{tab.icon}</Text>
-                {showDot && <View style={s.dot} />}
+                {showDot && <View style={s.activeDot} />}
               </View>
-              <Text style={[s.tabLabel, active && s.tabLabelActive]}>
-                {tab.label}
-              </Text>
+              <Text style={[s.tabLabel, active && s.tabLabelActive]}>{tab.label}</Text>
             </Pressable>
           );
         })}
       </View>
 
-      {/* Bottom safe area fill */}
-      {Platform.OS === 'ios' && <View style={s.iosSafeBottom} />}
+      {Platform.OS === 'ios' && <View style={s.iosSafe} />}
     </View>
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
-
 const s = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: JihColors.navy,
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: JihColors.navy,
-  },
-  navWrap: {
-    backgroundColor: JihColors.navy,
-    borderBottomWidth: 1,
-    borderBottomColor: JihColors.navyXL,
-  },
-  nav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  logo: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: JihColors.gold,
-    letterSpacing: -0.5,
-  },
-  logoutBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: JihColors.navyXL,
-  },
-  logoutText: {
-    color: JihColors.white,
-    fontSize: 13,
-    opacity: 0.8,
-  },
-  content: {
-    flex: 1,
-    backgroundColor: JihColors.navy,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: JihColors.navy,
-    borderTopWidth: 1,
-    borderTopColor: JihColors.navyXL,
-    paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 0 : 8,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 2,
-  },
-  tabIcon: {
-    fontSize: 20,
-  },
-  tabLabel: {
-    fontSize: 10,
-    color: JihColors.muted,
-    fontWeight: '500',
-  },
-  tabLabelActive: {
-    color: JihColors.gold,
-  },
-  dot: {
-    position: 'absolute',
-    top: -2,
-    right: -4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: JihColors.gold,
-  },
-  iosSafeBottom: {
-    height: 20,
-    backgroundColor: JihColors.navy,
-  },
+  root:           { flex: 1, backgroundColor: JihColors.navy },
+  center:         { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: JihColors.navy, gap: 20 },
+  loadingLogo:    { fontSize: 40, fontWeight: '800', color: JihColors.gold, letterSpacing: -1 },
+  navWrap:        { backgroundColor: JihColors.navy, borderBottomWidth: 1, borderBottomColor: JihColors.navyXL },
+  nav:            { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+  logo:           { fontSize: 28, fontWeight: '800', color: JihColors.gold, letterSpacing: -0.5 },
+  logoutBtn:      { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: JihColors.navyXL },
+  logoutText:     { color: JihColors.white, fontSize: 13, opacity: 0.8 },
+  content:        { flex: 1, backgroundColor: JihColors.navy },
+  tabBar:         { flexDirection: 'row', backgroundColor: JihColors.navy, borderTopWidth: 1, borderTopColor: JihColors.navyXL, paddingTop: 8, paddingBottom: Platform.OS === 'ios' ? 0 : 8 },
+  tabItem:        { flex: 1, alignItems: 'center', gap: 2 },
+  tabIcon:        { fontSize: 20 },
+  tabLabel:       { fontSize: 10, color: JihColors.muted, fontWeight: '500' },
+  tabLabelActive: { color: JihColors.gold },
+  activeDot:      { position: 'absolute', top: -2, right: -4, width: 8, height: 8, borderRadius: 4, backgroundColor: JihColors.gold },
+  iosSafe:        { height: 20, backgroundColor: JihColors.navy },
 });

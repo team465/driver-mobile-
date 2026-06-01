@@ -9,7 +9,7 @@
  *  - Notifying admins + sending confirmation
  */
 
-import { supabase } from '@/lib/supabase';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '@/lib/supabase';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -193,7 +193,50 @@ export async function saveDraft(
   return data.id;
 }
 
-// ── Upload a document file ────────────────────────────────────────────────────
+// ── Storage upload helper ─────────────────────────────────────────────────────
+// React Native / Hermes does NOT support creating Blobs from ArrayBuffer.
+// The fix: use FormData with the local file URI — RN handles this natively
+// and uploads multipart directly, no Blob conversion needed.
+
+async function storageUpload(
+  bucket: string,
+  storagePath: string,
+  fileUri: string,
+  mimeType: string
+): Promise<void> {
+  const ext = mimeType.includes('jpeg') ? 'jpg' : (mimeType.split('/')[1] ?? 'jpg');
+
+  const form = new FormData();
+  form.append('file', {
+    uri:  fileUri,
+    type: mimeType,
+    name: `upload.${ext}`,
+  } as any);
+
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token ?? '';
+
+  const res = await fetch(
+    `${SUPABASE_URL}/storage/v1/object/${bucket}/${storagePath}`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: SUPABASE_ANON_KEY,
+        'x-upsert': 'true',
+        // Do NOT set Content-Type — let fetch set it with the boundary
+      },
+      body: form,
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).message ?? `Upload failed (${res.status})`);
+  }
+}
+
+// ── Upload a driver document ──────────────────────────────────────────────────
 
 export async function uploadDriverDocument(
   userId: string,
@@ -201,33 +244,25 @@ export async function uploadDriverDocument(
   fileUri: string,
   mimeType: string
 ): Promise<string> {
-  const ext  = mimeType.split('/')[1] ?? 'jpg';
+  const ext  = mimeType.includes('jpeg') ? 'jpg' : (mimeType.split('/')[1] ?? 'jpg');
   const path = `${userId}/${docKey}-${Date.now()}.${ext}`;
-
-  const response  = await fetch(fileUri);
-  const blob      = await response.blob();
-
-  const { data, error } = await supabase.storage
-    .from('driver-docs')
-    .upload(path, blob, { contentType: mimeType, upsert: true });
-  if (error) throw error;
-  return data.path;
+  await storageUpload('driver-docs', path, fileUri, mimeType);
+  return path;
 }
 
 // ── Upload profile photo ──────────────────────────────────────────────────────
 
-export async function uploadProfilePhoto(userId: string, fileUri: string, mimeType: string): Promise<string> {
-  const ext      = mimeType.split('/')[1] ?? 'jpg';
+export async function uploadProfilePhoto(
+  userId: string,
+  fileUri: string,
+  mimeType: string
+): Promise<string> {
+  const ext      = mimeType.includes('jpeg') ? 'jpg' : (mimeType.split('/')[1] ?? 'jpg');
   const filePath = `${userId}/avatar.${ext}`;
-
-  const response = await fetch(fileUri);
-  const blob     = await response.blob();
-
-  await supabase.storage.from('avatars').upload(filePath, blob, { contentType: mimeType, upsert: true });
+  await storageUpload('avatars', filePath, fileUri, mimeType);
 
   const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
   const finalUrl = `${publicUrl}?t=${Date.now()}`;
-
   await supabase.from('profiles').update({ avatar_url: finalUrl }).eq('id', userId);
   return finalUrl;
 }

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -23,8 +22,12 @@ export default function LoginScreen() {
   const [error,    setError]    = useState('');
 
   const handleSignIn = async () => {
-    if (!email.trim() || !password) {
-      setError('Please enter your email and password.');
+    if (!email.trim()) {
+      setError('Please enter your email address.');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password.');
       return;
     }
     setError('');
@@ -33,7 +36,18 @@ export default function LoginScreen() {
       await signIn(email.trim().toLowerCase(), password);
       router.replace('/');
     } catch (e: any) {
-      setError(e.message || 'Sign in failed. Check your credentials.');
+      const msg: string = e.message ?? '';
+      // Give non-technical users a clear, helpful message
+      if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials')) {
+        setError(
+          'Email or password is incorrect.\n\n' +
+          'If you don\'t have an account yet, tap "Create Account" below.'
+        );
+      } else if (msg.includes('Email not confirmed')) {
+        setError('Please check your email inbox and confirm your email address first.');
+      } else {
+        setError(msg || 'Sign in failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -55,14 +69,15 @@ export default function LoginScreen() {
 
         <Text style={s.title}>Sign in to your account</Text>
 
+        {/* Error */}
         {error ? <Text style={s.errorText}>{error}</Text> : null}
 
         <TextInput
           style={s.input}
-          placeholder="Email"
+          placeholder="Email address"
           placeholderTextColor={JihColors.muted}
           value={email}
-          onChangeText={setEmail}
+          onChangeText={t => { setEmail(t); setError(''); }}
           autoCapitalize="none"
           keyboardType="email-address"
           returnKeyType="next"
@@ -73,12 +88,13 @@ export default function LoginScreen() {
           placeholder="Password"
           placeholderTextColor={JihColors.muted}
           value={password}
-          onChangeText={setPassword}
+          onChangeText={t => { setPassword(t); setError(''); }}
           secureTextEntry
           returnKeyType="done"
           onSubmitEditing={handleSignIn}
         />
 
+        {/* Sign in */}
         <Pressable
           style={[s.btn, loading && s.btnDisabled]}
           onPress={handleSignIn}
@@ -88,6 +104,18 @@ export default function LoginScreen() {
             ? <ActivityIndicator color={JihColors.navy} />
             : <Text style={s.btnText}>Sign In</Text>
           }
+        </Pressable>
+
+        {/* Divider */}
+        <View style={s.divider}>
+          <View style={s.line} />
+          <Text style={s.dividerText}>Don't have an account?</Text>
+          <View style={s.line} />
+        </View>
+
+        {/* Create account — prominent so users don't get stuck */}
+        <Pressable style={s.signupBtn} onPress={() => router.push('/signup')}>
+          <Text style={s.signupBtnText}>Create Account →</Text>
         </Pressable>
       </KeyboardAvoidingView>
     </View>
@@ -137,9 +165,10 @@ const s = StyleSheet.create({
   errorText: {
     color: '#fc8181',
     fontSize: 14,
-    backgroundColor: 'rgba(220,38,38,0.15)',
+    backgroundColor: 'rgba(220,38,38,0.12)',
     borderRadius: 8,
-    padding: 10,
+    padding: 12,
+    lineHeight: 20,
   },
   input: {
     backgroundColor: JihColors.navyL,
@@ -156,14 +185,32 @@ const s = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 15,
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 2,
   },
-  btnDisabled: {
-    opacity: 0.6,
-  },
+  btnDisabled: { opacity: 0.6 },
   btnText: {
     color: JihColors.navy,
     fontWeight: '700',
     fontSize: 16,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  line:        { flex: 1, height: 1, backgroundColor: JihColors.navyXL },
+  dividerText: { color: JihColors.muted, fontSize: 11 },
+  signupBtn: {
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: JihColors.gold,
+  },
+  signupBtnText: {
+    color: JihColors.gold,
+    fontWeight: '700',
+    fontSize: 15,
   },
 });
