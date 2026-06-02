@@ -3,7 +3,6 @@
  *
  * Handles the full single-ride lifecycle: arrived → start → complete → rate.
  * Multi-stop share rides are also supported (handleDropOff + shareRideQueue).
- * Map is a placeholder — add react-native-maps later.
  */
 
 import { useState } from 'react';
@@ -24,6 +23,7 @@ import { useDriver } from '@/contexts/DriverContext';
 import { type ActiveRide } from '@/api/rides';
 import { JihColors } from '@/constants/theme';
 import { formatUsd } from '@/lib/currency';
+import DriverMap from './DriverMap';
 
 interface Props {
   onRideComplete: () => void;
@@ -237,19 +237,12 @@ export default function ActiveRideScreen({ onRideComplete, onNoRide }: Props) {
         </View>
       )}
 
-      {/* Map placeholder */}
-      <View style={s.mapPlaceholder}>
-        <Text style={s.mapIcon}>🗺️</Text>
-        <Text style={s.mapStatus}>
-          {status === 'matched'    ? 'Navigate to Pickup'
-          : status === 'arrived'  ? 'Waiting for Passenger'
-          : 'Ride In Progress'}
-        </Text>
-        {driverLocation && (
-          <Text style={s.mapCoords}>
-            {driverLocation.latitude.toFixed(4)}, {driverLocation.longitude.toFixed(4)}
-          </Text>
-        )}
+      {/* Live map */}
+      <View style={s.mapContainer}>
+        <DriverMap
+          activeRide={activeRide}
+          driverLocation={driverLocation}
+        />
       </View>
 
       {/* Ride info card */}
@@ -430,15 +423,8 @@ const s = StyleSheet.create({
   sharePassenger: { color: JihColors.gold,  fontSize: 14, fontWeight: '600' },
   shareAddress:   { color: JihColors.muted, fontSize: 13 },
 
-  // Map placeholder
-  mapPlaceholder: {
-    height: 180, backgroundColor: JihColors.navyM, margin: 12, borderRadius: 12,
-    justifyContent: 'center', alignItems: 'center', gap: 6,
-    borderWidth: 1, borderColor: JihColors.navyXL,
-  },
-  mapIcon:   { fontSize: 36 },
-  mapStatus: { color: JihColors.white, fontWeight: '600', fontSize: 14 },
-  mapCoords: { color: JihColors.muted, fontSize: 11 },
+  // Live map
+  mapContainer: { height: 260, position: 'relative' },
 
   bottomCard: { flex: 1, backgroundColor: JihColors.navyM },
 

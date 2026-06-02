@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
-  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -19,6 +18,7 @@ import {
 import { useDriver } from '@/contexts/DriverContext';
 import { JihColors } from '@/constants/theme';
 import { formatUsd } from '@/lib/currency';
+import DriverMap from './DriverMap';
 
 interface Props {
   onRideAccepted: () => void;
@@ -37,6 +37,7 @@ export default function RequestsScreen({ onRideAccepted }: Props) {
     todayRides,
     subscriptionStatus,
     pendingRideCount,
+    driverLocation,
     toggleOnline,
     acceptCurrentRide,
     declineCurrentRide,
@@ -130,27 +131,34 @@ export default function RequestsScreen({ onRideAccepted }: Props) {
         </View>
       </View>
 
-      {/* Waiting state */}
-      {online && !pendingRequest && (
-        <View style={s.waitingCard}>
-          <View style={s.pulseRow}>
-            <View style={s.pulseDot} />
-            <Text style={s.waitingTitle}>You are online</Text>
-          </View>
-          <Text style={s.waitingSubtitle}>Waiting for ride requests…</Text>
-        </View>
-      )}
+      {/* Map fills all remaining space; status badge overlays the bottom */}
+      <View style={s.mapContainer}>
+        <DriverMap
+          driverLocation={driverLocation}
+          pickupLat={pendingRequest?.pickup_lat}
+          pickupLng={pendingRequest?.pickup_lng}
+        />
 
-      {/* Offline state */}
-      {!online && (
-        <View style={s.offlineView}>
-          <Text style={s.offlineIcon}>🏁</Text>
-          <Text style={s.offlineTitle}>You are offline</Text>
-          <Text style={s.offlineSubtitle}>
-            Toggle online to start receiving ride requests.
-          </Text>
-        </View>
-      )}
+        {/* Offline overlay */}
+        {!online && (
+          <View style={s.mapOverlay}>
+            <Text style={s.mapOverlayIcon}>🏁</Text>
+            <Text style={s.mapOverlayTitle}>You are offline</Text>
+            <Text style={s.mapOverlaySub}>Toggle online to receive requests</Text>
+          </View>
+        )}
+
+        {/* Waiting overlay */}
+        {online && !pendingRequest && (
+          <View style={s.mapOverlay}>
+            <View style={s.pulseRow}>
+              <View style={s.pulseDot} />
+              <Text style={s.mapOverlayTitle}>You are online</Text>
+            </View>
+            <Text style={s.mapOverlaySub}>Waiting for ride requests…</Text>
+          </View>
+        )}
+      </View>
 
       {/* Pending ride request card */}
       {pendingRequest && (
@@ -267,6 +275,19 @@ const s = StyleSheet.create({
     flex: 1,
     backgroundColor: JihColors.navy,
   },
+  mapContainer: { flex: 1, position: 'relative' },
+
+  // Status overlays pinned to the bottom of the map
+  mapOverlay: {
+    position: 'absolute', bottom: 16, left: 16, right: 16,
+    backgroundColor: 'rgba(17,30,44,0.88)',
+    borderRadius: 14, paddingVertical: 12, paddingHorizontal: 16,
+    alignItems: 'center', gap: 4,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+  },
+  mapOverlayIcon:  { fontSize: 28 },
+  mapOverlayTitle: { color: '#ffffff', fontWeight: '700', fontSize: 15 },
+  mapOverlaySub:   { color: '#6b7a8d', fontSize: 13 },
   center: {
     flex: 1,
     justifyContent: 'center',
