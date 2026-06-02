@@ -194,9 +194,9 @@ export async function saveDraft(
 }
 
 // ── Storage upload helper ─────────────────────────────────────────────────────
-// React Native / Hermes does NOT support creating Blobs from ArrayBuffer.
-// The fix: use FormData with the local file URI — RN handles this natively
-// and uploads multipart directly, no Blob conversion needed.
+// Expo 56 / RN 0.77 replaced fetch internals — the new implementation rejects
+// the { uri, type, name } FormData entry with "Unsupported FormDataPart".
+// XMLHttpRequest is unaffected and correctly handles RN file URIs natively.
 
 async function storageUpload(
   bucket: string,
@@ -206,34 +206,30 @@ async function storageUpload(
 ): Promise<void> {
   const ext = mimeType.includes('jpeg') ? 'jpg' : (mimeType.split('/')[1] ?? 'jpg');
 
-  const form = new FormData();
-  form.append('file', {
-    uri:  fileUri,
-    type: mimeType,
-    name: `upload.${ext}`,
-  } as any);
-
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token ?? '';
 
-  const res = await fetch(
-    `${SUPABASE_URL}/storage/v1/object/${bucket}/${storagePath}`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        apikey: SUPABASE_ANON_KEY,
-        'x-upsert': 'true',
-        // Do NOT set Content-Type — let fetch set it with the boundary
-      },
-      body: form,
-    }
-  );
+  const form = new FormData();
+  form.append('file', { uri: fileUri, type: mimeType, name: `upload.${ext}` } as any);
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as any).message ?? `Upload failed (${res.status})`);
-  }
+  await new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${SUPABASE_URL}/storage/v1/object/${bucket}/${storagePath}`);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.setRequestHeader('apikey', SUPABASE_ANON_KEY);
+    xhr.setRequestHeader('x-upsert', 'true');
+    xhr.onload = () => {
+      if (xhr.status < 300) {
+        resolve();
+      } else {
+        let msg = `Upload failed (${xhr.status})`;
+        try { msg = JSON.parse(xhr.responseText)?.message ?? msg; } catch {}
+        reject(new Error(msg));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Upload network error'));
+    xhr.send(form);
+  });
 }
 
 // ── Upload a driver document ──────────────────────────────────────────────────
@@ -285,12 +281,6 @@ export async function submitDriverApplication(
     phone:                     appData.phone,
     address:                   appData.address,
     city:                      appData.city,
-    languages_spoken:          appData.languages,
-    communication_needs:       appData.communicationNeeds,
-    speaks_english:            appData.speaksEnglish,
-    speaks_khmer:              appData.speaksKhmer,
-    tourist_friendly:          appData.touristFriendly,
-    disability_support:        appData.disabilitySupport,
     vehicle_type:              appData.vehicleType,
     vehicle_brand:             appData.vehicleBrand,
     vehicle_model:             appData.vehicleModel,
@@ -321,10 +311,14 @@ export async function submitDriverApplication(
     if (error) throw error;
   }
 
-  // Save communication prefs to profile
+  // Save communication prefs + accessibility flags to profile
   await supabase.from('profiles').update({
     languages_spoken:    appData.languages,
     communication_needs: appData.communicationNeeds,
+    speaks_english:      appData.speaksEnglish,
+    speaks_khmer:        appData.speaksKhmer,
+    tourist_friendly:    appData.touristFriendly,
+    disability_support:  appData.disabilitySupport,
   } as any).eq('id', userId);
 
   // Notify admins

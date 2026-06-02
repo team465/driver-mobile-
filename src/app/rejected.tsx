@@ -66,11 +66,11 @@ export default function RejectedScreen() {
           <Text style={s.resubmitBtnText}>Fix & Resubmit Application →</Text>
         </Pressable>
 
-        <Pressable style={s.contactBtn} onPress={() => Linking.openURL('mailto:support@jisworld.com')}>
+        <Pressable style={s.contactBtn} onPress={() => Linking.openURL('mailto:support@jisworld.com').catch(() => {})}>
           <Text style={s.contactBtnText}>📧  Still confused? Email support</Text>
         </Pressable>
 
-        <Pressable style={s.signOutBtn} onPress={signOut}>
+        <Pressable style={s.signOutBtn} onPress={async () => { await signOut(); router.replace('/welcome'); }}>
           <Text style={s.signOutText}>Sign out</Text>
         </Pressable>
       </ScrollView>

@@ -3,11 +3,11 @@ import {
   ActivityIndicator,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
@@ -54,19 +54,23 @@ export default function DriverDashboard() {
 
     // Not yet approved — check application status
     (async () => {
-      const { data: app } = await supabase
-        .from('driver_applications')
-        .select('status')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      try {
+        const { data: app } = await supabase
+          .from('driver_applications')
+          .select('status')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (!app || app.status === 'draft') setAppStatus('no_application');
-      else if (app.status === 'pending')  setAppStatus('pending');
-      else if (app.status === 'rejected') setAppStatus('rejected');
-      else if (app.status === 'approved') setAppStatus('approved');
-      else setAppStatus('no_application');
+        if (!app || app.status === 'draft') setAppStatus('no_application');
+        else if (app.status === 'pending')  setAppStatus('pending');
+        else if (app.status === 'rejected') setAppStatus('rejected');
+        else if (app.status === 'approved') setAppStatus('approved');
+        else setAppStatus('no_application');
+      } catch {
+        setAppStatus('no_application');
+      }
     })();
   }, [user, authLoading, role]);
 

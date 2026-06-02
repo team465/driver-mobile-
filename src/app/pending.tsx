@@ -1,5 +1,6 @@
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { JihColors } from '@/constants/theme';
 
@@ -52,11 +53,11 @@ export default function PendingScreen() {
           ].map(tip => <Text key={tip} style={s.tip}>{tip}</Text>)}
         </View>
 
-        <Pressable style={s.contactBtn} onPress={() => Linking.openURL('mailto:support@jisworld.com')}>
+        <Pressable style={s.contactBtn} onPress={() => Linking.openURL('mailto:support@jisworld.com').catch(() => {})}>
           <Text style={s.contactBtnText}>📧  Questions? Email us</Text>
         </Pressable>
 
-        <Pressable style={s.signOutBtn} onPress={signOut}>
+        <Pressable style={s.signOutBtn} onPress={async () => { await signOut(); router.replace('/welcome'); }}>
           <Text style={s.signOutText}>Sign out</Text>
         </Pressable>
       </ScrollView>

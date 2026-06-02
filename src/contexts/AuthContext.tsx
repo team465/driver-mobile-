@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useContext,
   useEffect,
@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { setAccessToken } from '@/lib/api';
 import { getUserData, type AppRole } from '@/api/auth';
 
 interface AuthContextValue {
@@ -41,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hydrateUser = async (userId: string) => {
     try {
       const { role: r, profile: p } = await getUserData(userId);
-      setRole(r);
+      setRole((r ?? null) as unknown as AppRole | null);
       setProfile(p);
     } catch (err) {
       console.error('[AuthContext] hydrateUser error:', err);
@@ -49,31 +50,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Initial session load
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) hydrateUser(s.user.id);
-      setLoading(false);
-    });
+    // Safety net: unblock after 4 s in case getSession() hangs
+    // (happens in Expo Go when AsyncStorage native module is unavailable)
+    const safetyTimer = setTimeout(() => setLoading(false), 4000);
+
+    supabase.auth.getSession()
+      .then(({ data: { session: s } }) => {
+        setAccessToken(s?.access_token ?? null);
+        setSession(s);
+        setUser(s?.user ?? null);
+        if (s?.user) hydrateUser(s.user.id);
+      })
+      .catch(() => { /* treat as signed-out */ })
+      .finally(() => {
+        clearTimeout(safetyTimer);
+        setLoading(false);
+      });
 
     // Live auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, s) => {
+        setAccessToken(s?.access_token ?? null);
         setSession(s);
         setUser(s?.user ?? null);
         if (s?.user) {
-          // defer to avoid Supabase deadlock on the same tick
           setTimeout(() => hydrateUser(s.user.id), 0);
         } else {
           setRole(null);
           setProfile(null);
         }
+        // Unblock loading if auth state resolves before getSession
         setLoading(false);
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(safetyTimer);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
