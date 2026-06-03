@@ -1,30 +1,35 @@
-import { Profile } from '@/types';
+import { supabase } from '@/lib/supabase';
 import type { ActiveRide } from '@/api/rides';
 import type { DriverProfile, RideRequest } from '@/api/driver';
 import type { EarningsSummary, WithdrawalRequest } from '@/api/earnings';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
-// Token is set synchronously on every auth state change — avoids async
-// getSession() timing issues when tabs mount after login.
+// Keep a cached token for synchronous access — updated on every auth state change
 let _accessToken: string | null = null;
 
 export function setAccessToken(token: string | null) {
   _accessToken = token;
 }
 
-function getHeaders(): Record<string, string> {
-  if (!_accessToken) throw new Error('Not authenticated');
-  return { Authorization: `Bearer ${_accessToken}`, 'Content-Type': 'application/json' };
+async function getAuthHeader(): Promise<Record<string, string>> {
+  // Use cached token first (fast), fall back to getSession() to get a fresh one
+  const token = _accessToken ?? (await supabase.auth.getSession()).data.session?.access_token;
+  if (!token) throw new Error('Not authenticated');
+  return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const headers = await getAuthHeader();
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
-    headers: getHeaders(),
+    headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  const json = await res.json();
+  const text = await res.text();
+  let json: any;
+  try { json = JSON.parse(text); }
+  catch { throw new Error(`Backend unreachable (${res.status})`); }
   if (!res.ok) throw new Error(json.error ?? `Request failed: ${res.status}`);
   return json as T;
 }
