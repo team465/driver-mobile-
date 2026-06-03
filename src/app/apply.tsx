@@ -175,6 +175,11 @@ export default function ApplyScreen() {
       <StatusBar style="light" />
       <ScrollView ref={scrollRef} contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
+        {/* Back button */}
+        <Pressable style={s.topBackBtn} onPress={() => step > 1 ? handleBack() : router.canGoBack() ? router.back() : router.replace('/signup')}>
+          <Text style={s.topBackBtnText}>← Back</Text>
+        </Pressable>
+
         {/* Header */}
         <View style={s.header}>
           <Text style={s.logo}>jih</Text>
@@ -414,10 +419,12 @@ const ff = StyleSheet.create({
 
 const s = StyleSheet.create({
   root:   { flex: 1, backgroundColor: JihColors.navy },
-  scroll: { padding: 20, gap: 16, paddingBottom: 60 },
+  scroll:          { padding: 20, gap: 16, paddingBottom: 60, paddingTop: 12 },
+  topBackBtn:      { alignSelf: 'flex-start', paddingVertical: 8, paddingRight: 16, marginTop: 36 },
+  topBackBtnText:  { color: JihColors.gold, fontSize: 15, fontWeight: '600' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: JihColors.navy },
 
-  header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 8 },
+  header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 8 },
   logo:         { fontSize: 26, fontWeight: '800', color: JihColors.gold, letterSpacing: -1 },
   stepLabel:    { color: JihColors.muted, fontSize: 14, fontWeight: '600' },
   progressTrack: { height: 4, backgroundColor: JihColors.navyXL, borderRadius: 2, marginBottom: 4 },

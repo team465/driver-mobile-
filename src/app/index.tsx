@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Redirect } from 'expo-router';
+import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import { supabase } from '@/lib/supabase';
@@ -46,13 +46,11 @@ export default function DriverDashboard() {
       return;
     }
 
-    // Approved driver — no need to check application
     if (role === 'driver') {
       setAppStatus('approved');
       return;
     }
 
-    // Not yet approved — check application status
     (async () => {
       try {
         const { data: app } = await supabase
@@ -74,9 +72,17 @@ export default function DriverDashboard() {
     })();
   }, [user, authLoading, role]);
 
+  // Navigate away from the dashboard when not approved — must be after all hooks
+  useEffect(() => {
+    if (appStatus === 'no_user')             router.replace('/welcome');
+    else if (appStatus === 'no_application') router.replace('/apply');
+    else if (appStatus === 'pending')        router.replace('/pending');
+    else if (appStatus === 'rejected')       router.replace('/rejected');
+  }, [appStatus]);
+
   // ── Route ──────────────────────────────────────────────────────────────────
 
-  if (appStatus === 'loading') {
+  if (appStatus === 'loading' || appStatus !== 'approved') {
     return (
       <View style={s.center}>
         <StatusBar style="light" />
@@ -85,11 +91,6 @@ export default function DriverDashboard() {
       </View>
     );
   }
-
-  if (appStatus === 'no_user')        return <Redirect href="/welcome" />;
-  if (appStatus === 'no_application') return <Redirect href="/apply" />;
-  if (appStatus === 'pending')        return <Redirect href="/pending" />;
-  if (appStatus === 'rejected')       return <Redirect href="/rejected" />;
 
   // ── Approved driver dashboard ──────────────────────────────────────────────
 

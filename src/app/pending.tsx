@@ -19,6 +19,10 @@ export default function PendingScreen() {
       <StatusBar style="light" />
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
+        <Pressable style={s.backBtn} onPress={async () => { await signOut(); router.replace('/welcome'); }}>
+          <Text style={s.backBtnText}>← Sign out</Text>
+        </Pressable>
+
         <View style={s.hero}>
           <Text style={s.heroIcon}>🎉</Text>
           <Text style={s.heroTitle}>Application submitted!</Text>
@@ -67,7 +71,9 @@ export default function PendingScreen() {
 
 const s = StyleSheet.create({
   root:            { flex: 1, backgroundColor: JihColors.navy },
-  scroll:          { padding: 24, gap: 20, paddingBottom: 60, paddingTop: 60 },
+  scroll:          { padding: 24, gap: 20, paddingBottom: 60, paddingTop: 16 },
+  backBtn:         { alignSelf: 'flex-start', paddingVertical: 8, marginTop: 36 },
+  backBtnText:     { color: JihColors.gold, fontSize: 15, fontWeight: '600' },
   hero:            { alignItems: 'center', gap: 10 },
   heroIcon:        { fontSize: 64 },
   heroTitle:       { fontSize: 26, fontWeight: '800', color: JihColors.white, textAlign: 'center' },
