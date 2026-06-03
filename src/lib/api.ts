@@ -19,6 +19,20 @@ async function getAuthHeader(): Promise<Record<string, string>> {
   return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
 
+async function publicRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const text = await res.text();
+  let json: any;
+  try { json = JSON.parse(text); }
+  catch { throw new Error(`Backend unreachable (${res.status})`); }
+  if (!res.ok) throw new Error(json.error ?? `Request failed: ${res.status}`);
+  return json as T;
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers = await getAuthHeader();
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -33,6 +47,21 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   if (!res.ok) throw new Error(json.error ?? `Request failed: ${res.status}`);
   return json as T;
 }
+
+// ── Auth (public — no token required) ────────────────────────────────────────
+
+export const AuthPublicAPI = {
+  signUp: (full_name: string, email: string, password: string, phone?: string) =>
+    publicRequest<{ success: boolean; needsVerification: boolean }>('POST', '/api/auth/signup', { full_name, email, password, phone }),
+  verifyEmail: (email: string, code: string) =>
+    publicRequest<{ success: boolean }>('POST', '/api/auth/verify-email', { email, code }),
+  resendVerification: (email: string) =>
+    publicRequest<{ success: boolean }>('POST', '/api/auth/resend-verification', { email }),
+  forgotPassword: (email: string) =>
+    publicRequest<{ success: boolean }>('POST', '/api/auth/forgot-password', { email }),
+  resetPassword: (email: string, code: string, password: string) =>
+    publicRequest<{ success: boolean }>('POST', '/api/auth/reset-password', { email, code, password }),
+};
 
 // ── Driver Profile ────────────────────────────────────────────────────────────
 

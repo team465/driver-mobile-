@@ -1,24 +1,52 @@
 import { supabase } from '@/lib/supabase';
-import { DriverAuthAPI } from '@/lib/api';
+import { AuthPublicAPI, DriverAuthAPI } from '@/lib/api';
 
 export type AppRole = 'passenger' | 'driver' | 'admin' | 'partner' | 'investor';
 
-// ── Auth — always direct Supabase ─────────────────────────────────────────────
+// ── Sign In ───────────────────────────────────────────────────────────────────
 
 export async function signIn(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
+  if (!data.user?.email_confirmed_at) {
+    await supabase.auth.signOut();
+    throw new Error('Please verify your email before signing in.');
+  }
   return data;
 }
 
-export async function signUp(email: string, password: string, fullName?: string) {
-  const { data, error } = await supabase.auth.signUp({
-    email, password,
-    options: fullName ? { data: { full_name: fullName } } : undefined,
-  });
-  if (error) throw error;
-  return data;
+// ── Sign Up (via backend → sends Resend verification email) ──────────────────
+
+export async function signUp(
+  email: string,
+  password: string,
+  fullName?: string,
+  phone?: string,
+): Promise<{ needsVerification: boolean }> {
+  return AuthPublicAPI.signUp(fullName ?? '', email, password, phone);
 }
+
+// ── Email verification ────────────────────────────────────────────────────────
+
+export async function verifyEmail(email: string, code: string) {
+  return AuthPublicAPI.verifyEmail(email, code);
+}
+
+export async function resendVerification(email: string) {
+  return AuthPublicAPI.resendVerification(email);
+}
+
+// ── Password reset ────────────────────────────────────────────────────────────
+
+export async function requestPasswordReset(email: string) {
+  return AuthPublicAPI.forgotPassword(email);
+}
+
+export async function resetPasswordWithCode(email: string, code: string, password: string) {
+  return AuthPublicAPI.resetPassword(email, code, password);
+}
+
+// ── Sign Out ──────────────────────────────────────────────────────────────────
 
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
@@ -30,7 +58,7 @@ export async function getSession() {
   return session;
 }
 
-// ── User data + profile via backend API ───────────────────────────────────────
+// ── User data + profile via backend API ──────────────────────────────────────
 
 export async function getUserData(_userId: string) {
   try {
@@ -42,9 +70,4 @@ export async function getUserData(_userId: string) {
 
 export async function updateProfile(_userId: string, updates: Record<string, unknown>) {
   return DriverAuthAPI.updateProfile(updates);
-}
-
-export async function requestPasswordReset(email: string) {
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
-  if (error) throw error;
 }
