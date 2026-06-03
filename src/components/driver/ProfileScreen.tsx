@@ -5,6 +5,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDriver } from '@/contexts/DriverContext';
 import { JihColors } from '@/constants/theme';
@@ -102,7 +103,13 @@ export default function ProfileScreen() {
           <View style={s.verifyRow}>
             {verifications.map(v => (
               <View key={v.label} style={s.verifyItem}>
-                <Text style={s.verifyIcon}>{v.ok ? '✅' : '⏳'}</Text>
+                <SymbolView
+                  name={v.ok ? 'checkmark.circle.fill' : 'clock.fill'}
+                  type="monochrome"
+                  style={s.verifyIcon}
+                  tintColor={v.ok ? JihColors.gold : JihColors.muted}
+                  resizeMode="scaleAspectFit"
+                />
                 <Text style={s.verifyLabel}>{v.label}</Text>
               </View>
             ))}
@@ -142,6 +149,6 @@ const s = StyleSheet.create({
 
   verifyRow:   { flexDirection: 'row', gap: 12 },
   verifyItem:  { flex: 1, alignItems: 'center', gap: 4 },
-  verifyIcon:  { fontSize: 22 },
+  verifyIcon:  { width: 36, height: 36 },
   verifyLabel: { color: JihColors.muted, fontSize: 12 },
 });

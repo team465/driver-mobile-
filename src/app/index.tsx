@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SymbolView } from 'expo-symbols';
 
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,12 +25,12 @@ import SupportScreen    from '@/components/driver/SupportScreen';
 type AppStatus = 'loading' | 'no_user' | 'no_application' | 'pending' | 'rejected' | 'approved';
 type TabKey    = 'requests' | 'active' | 'earnings' | 'profile' | 'support';
 
-const TABS = [
-  { key: 'requests' as TabKey, label: 'Requests', icon: '📡' },
-  { key: 'active'   as TabKey, label: 'Active',   icon: '🗺️' },
-  { key: 'earnings' as TabKey, label: 'Earnings', icon: '💵' },
-  { key: 'profile'  as TabKey, label: 'Profile',  icon: '👤' },
-  { key: 'support'  as TabKey, label: 'Support',  icon: '🎧' },
+const TABS: { key: TabKey; label: string; sf: import('expo-symbols').SymbolViewProps['name'] }[] = [
+  { key: 'requests', label: 'Requests', sf: 'antenna.radiowaves.left.and.right' },
+  { key: 'active',   label: 'Active',   sf: 'map.fill' },
+  { key: 'earnings', label: 'Earnings', sf: 'banknote.fill' },
+  { key: 'profile',  label: 'Profile',  sf: 'person.fill' },
+  { key: 'support',  label: 'Support',  sf: 'headphones' },
 ];
 
 export default function DriverDashboard() {
@@ -126,7 +127,13 @@ export default function DriverDashboard() {
           return (
             <Pressable key={tab.key} style={s.tabItem} onPress={() => setActiveTab(tab.key)}>
               <View>
-                <Text style={s.tabIcon}>{tab.icon}</Text>
+                <SymbolView
+                  name={tab.sf}
+                  type="monochrome"
+                  style={s.tabIcon}
+                  tintColor={active ? JihColors.gold : JihColors.muted}
+                  resizeMode="scaleAspectFit"
+                />
                 {showDot && <View style={s.activeDot} />}
               </View>
               <Text style={[s.tabLabel, active && s.tabLabelActive]}>{tab.label}</Text>
@@ -152,7 +159,7 @@ const s = StyleSheet.create({
   content:        { flex: 1, backgroundColor: JihColors.navy },
   tabBar:         { flexDirection: 'row', backgroundColor: JihColors.navy, borderTopWidth: 1, borderTopColor: JihColors.navyXL, paddingTop: 8, paddingBottom: Platform.OS === 'ios' ? 0 : 8 },
   tabItem:        { flex: 1, alignItems: 'center', gap: 2 },
-  tabIcon:        { fontSize: 20 },
+  tabIcon:        { width: 24, height: 24 },
   tabLabel:       { fontSize: 10, color: JihColors.muted, fontWeight: '500' },
   tabLabelActive: { color: JihColors.gold },
   activeDot:      { position: 'absolute', top: -2, right: -4, width: 8, height: 8, borderRadius: 4, backgroundColor: JihColors.gold },
