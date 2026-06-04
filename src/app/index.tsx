@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDriver } from '@/contexts/DriverContext';
 import { JihColors } from '@/constants/theme';
+import JihDriverLogo from '@/components/JihDriverLogo';
 import RequestsScreen   from '@/components/driver/RequestsScreen';
 import ActiveRideScreen from '@/components/driver/ActiveRideScreen';
 import EarningsScreen   from '@/components/driver/EarningsScreen';
@@ -75,7 +76,7 @@ export default function DriverDashboard() {
 
   // Navigate away from the dashboard when not approved — must be after all hooks
   useEffect(() => {
-    if (appStatus === 'no_user')             router.replace('/welcome');
+    if (appStatus === 'no_user')             router.replace('/login');
     else if (appStatus === 'no_application') router.replace('/apply');
     else if (appStatus === 'pending')        router.replace('/pending');
     else if (appStatus === 'rejected')       router.replace('/rejected');
@@ -87,7 +88,7 @@ export default function DriverDashboard() {
     return (
       <View style={s.center}>
         <StatusBar style="light" />
-        <Text style={s.loadingLogo}>jih</Text>
+        <JihDriverLogo size="md" />
         <ActivityIndicator color={JihColors.gold} size="large" />
       </View>
     );
@@ -111,7 +112,7 @@ export default function DriverDashboard() {
 
       <SafeAreaView style={s.navWrap}>
         <View style={s.nav}>
-          <Text style={s.logo}>jih</Text>
+          <JihDriverLogo size="sm" />
           <Pressable style={s.logoutBtn} onPress={signOut}>
             <Text style={s.logoutText}>Log out</Text>
           </Pressable>

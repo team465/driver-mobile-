@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import JihDriverLogo from '@/components/JihDriverLogo';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -101,7 +102,7 @@ export default function LoginScreen() {
       <View style={s.root}>
         <StatusBar style="light" />
         <KeyboardAvoidingView style={s.card} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={s.logoRow}><Text style={s.logoText}>jih</Text><Text style={s.logoSub}>Driver</Text></View>
+          <JihDriverLogo size="md" />
           <Text style={s.title}>Reset your password</Text>
           <Text style={s.subtitle}>Enter your email and we'll send you a 6-digit reset code.</Text>
 
@@ -137,7 +138,7 @@ export default function LoginScreen() {
       <View style={s.root}>
         <StatusBar style="light" />
         <KeyboardAvoidingView style={s.card} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={s.logoRow}><Text style={s.logoText}>jih</Text><Text style={s.logoSub}>Driver</Text></View>
+          <JihDriverLogo size="md" />
           <Text style={s.title}>Enter your code</Text>
           <Text style={s.subtitle}>
             Check <Text style={{ color: JihColors.gold, fontWeight: '700' }}>{resetEmail}</Text> for a 6-digit code, then set your new password.
@@ -191,7 +192,7 @@ export default function LoginScreen() {
     <View style={s.root}>
       <StatusBar style="light" />
       <KeyboardAvoidingView style={s.card} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={s.logoRow}><Text style={s.logoText}>jih</Text><Text style={s.logoSub}>Driver</Text></View>
+        <JihDriverLogo size="md" />
         <Text style={s.title}>Sign in to your account</Text>
 
         {error        ? <Text style={s.errorText}>{error}</Text>          : null}

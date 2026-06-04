@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import type { ComponentProps } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -9,42 +10,51 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Feather } from '@expo/vector-icons';
 import { JihColors } from '@/constants/theme';
 
 const { width } = Dimensions.get('window');
 
-const SLIDES = [
+type FeatherName = ComponentProps<typeof Feather>['name'];
+
+const SLIDES: {
+  key: string;
+  icon: FeatherName;
+  headline: string;
+  body: string;
+  bullets: { icon: FeatherName; text: string }[];
+}[] = [
   {
     key: '1',
-    icon: '💰',
+    icon: 'dollar-sign',
     headline: 'Keep 100% of what you earn',
     body: 'No cuts, no commission. Every dollar a passenger pays goes straight to you.',
     bullets: [
-      { icon: '📈', text: 'Top drivers earn $20–40 per day' },
-      { icon: '🏦', text: 'Cash out to Wing or ABA anytime' },
-      { icon: '📊', text: 'See your earnings in real time' },
+      { icon: 'trending-up',  text: 'Top drivers earn $20–40 per day' },
+      { icon: 'credit-card',  text: 'Cash out to Wing or ABA anytime' },
+      { icon: 'bar-chart-2',  text: 'See your earnings in real time' },
     ],
   },
   {
     key: '2',
-    icon: '🕐',
+    icon: 'clock',
     headline: 'Work whenever you want',
     body: 'Morning, evening, weekends — you decide when to go online. No boss, no fixed hours.',
     bullets: [
-      { icon: '📱', text: 'One tap to go online or offline' },
-      { icon: '🗺️', text: 'Drive anywhere in Siem Reap' },
-      { icon: '🚗', text: 'Solo rides or share rides — your choice' },
+      { icon: 'toggle-right', text: 'One tap to go online or offline' },
+      { icon: 'map',          text: 'Drive anywhere in Siem Reap' },
+      { icon: 'users',        text: 'Solo rides or share rides — your choice' },
     ],
   },
   {
     key: '3',
-    icon: '⭐',
+    icon: 'star',
     headline: 'Join 500+ trusted drivers',
     body: 'Passengers come to you. Build your rating and grow a loyal base of regulars.',
     bullets: [
-      { icon: '🔔', text: 'Instant ride notifications' },
-      { icon: '🤝', text: 'Tourists & locals both use jih' },
-      { icon: '🎓', text: 'Help educate kids with MOOL NGO' },
+      { icon: 'bell',         text: 'Instant ride notifications' },
+      { icon: 'heart',        text: 'Tourists & locals both use jih' },
+      { icon: 'book-open',    text: 'Help educate kids with MOOL NGO' },
     ],
   },
 ];
@@ -86,13 +96,17 @@ export default function WelcomeScreen() {
         }}
         renderItem={({ item }) => (
           <View style={[s.slide, { width }]}>
-            <Text style={s.slideIcon}>{item.icon}</Text>
+            <View style={s.slideIconWrap}>
+              <Feather name={item.icon} size={48} color={JihColors.white} strokeWidth={1.5} />
+            </View>
             <Text style={s.headline}>{item.headline}</Text>
             <Text style={s.body}>{item.body}</Text>
             <View style={s.bullets}>
-              {item.bullets.map((b: { icon: string; text: string }) => (
+              {(item.bullets as { icon: FeatherName; text: string }[]).map(b => (
                 <View key={b.text} style={s.bullet}>
-                  <Text style={s.bulletIcon}>{b.icon}</Text>
+                  <View style={s.bulletIconWrap}>
+                    <Feather name={b.icon} size={18} color={JihColors.white} strokeWidth={1.8} />
+                  </View>
                   <Text style={s.bulletText}>{b.text}</Text>
                 </View>
               ))}
@@ -131,14 +145,14 @@ const s = StyleSheet.create({
   logo:        { fontSize: 32, fontWeight: '800', color: JihColors.gold, letterSpacing: -1 },
   signInLink:  { fontSize: 15, color: JihColors.gold, fontWeight: '600' },
 
-  slide:       { paddingHorizontal: 28, justifyContent: 'center', paddingTop: 16, gap: 16 },
-  slideIcon:   { fontSize: 68, textAlign: 'center' },
-  headline:    { fontSize: 28, fontWeight: '800', color: JihColors.white, textAlign: 'center', lineHeight: 34, letterSpacing: -0.5 },
-  body:        { fontSize: 16, color: '#c7cdd6', textAlign: 'center', lineHeight: 24 },
-  bullets:     { gap: 12, marginTop: 4 },
-  bullet:      { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: JihColors.navyM, borderRadius: 12, padding: 14 },
-  bulletIcon:  { fontSize: 22, width: 28, textAlign: 'center' },
-  bulletText:  { flex: 1, color: JihColors.white, fontSize: 15, fontWeight: '500' },
+  slide:          { paddingHorizontal: 28, justifyContent: 'center', paddingTop: 16, gap: 16 },
+  slideIconWrap:  { width: 96, height: 96, borderRadius: 48, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center', alignSelf: 'center' },
+  headline:       { fontSize: 28, fontWeight: '800', color: JihColors.white, textAlign: 'center', lineHeight: 34, letterSpacing: -0.5 },
+  body:           { fontSize: 16, color: '#c7cdd6', textAlign: 'center', lineHeight: 24 },
+  bullets:        { gap: 12, marginTop: 4 },
+  bullet:         { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: JihColors.navyM, borderRadius: 12, padding: 14 },
+  bulletIconWrap: { width: 36, height: 36, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' },
+  bulletText:     { flex: 1, color: JihColors.white, fontSize: 15, fontWeight: '500' },
 
   dots:        { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingVertical: 20 },
   dot:         { width: 8, height: 8, borderRadius: 4, backgroundColor: JihColors.navyXL },

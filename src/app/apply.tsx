@@ -3,6 +3,8 @@
  * Step 1: About You · Step 2: Your Vehicle · Step 3: Documents & Bank · Step 4: Review & Submit
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Feather } from '@expo/vector-icons';
+import JihDriverLogo from '@/components/JihDriverLogo';
 import {
   ActivityIndicator,
   Alert,
@@ -182,7 +184,7 @@ export default function ApplyScreen() {
 
         {/* Header */}
         <View style={s.header}>
-          <Text style={s.logo}>jih</Text>
+          <JihDriverLogo size="sm" />
           <Text style={s.stepLabel}>Step {step} of 4</Text>
         </View>
         <View style={s.progressTrack}>
@@ -225,12 +227,18 @@ export default function ApplyScreen() {
 
           <View style={s.fieldWrap}>
             <Text style={s.label}>Driver labels (optional)</Text>
-            {[{ key: 'touristFriendly', label: '🌍 Tourist Friendly' }, { key: 'disabilitySupport', label: '♿ Disability Friendly' }].map(opt => (
+            {([
+              { key: 'touristFriendly',  icon: 'globe'  as const, label: 'Tourist Friendly' },
+              { key: 'disabilitySupport', icon: 'shield' as const, label: 'Disability Friendly' },
+            ]).map(opt => (
               <Pressable key={opt.key} style={s.checkRow} onPress={() => set(opt.key as any, !(data as any)[opt.key])}>
                 <View style={[s.checkbox, (data as any)[opt.key] && s.checkboxOn]}>
                   {(data as any)[opt.key] && <Text style={s.checkmark}>✓</Text>}
                 </View>
-                <Text style={s.checkLabel}>{opt.label}</Text>
+                <View style={s.checkLabelRow}>
+                  <Feather name={opt.icon} size={15} color="#ffffff" />
+                  <Text style={s.checkLabel}>{opt.label}</Text>
+                </View>
               </Pressable>
             ))}
           </View>
@@ -238,14 +246,13 @@ export default function ApplyScreen() {
 
         {/* ── STEP 2: Vehicle ──────────────────────────────────────────────── */}
         {step === 2 && <>
-          <StepTitle icon="🚗" title="What are you driving?" subtitle="Your vehicle type determines which ride requests you receive." />
+          <StepTitle icon="" title="What are you driving?" subtitle="Your vehicle type determines which ride requests you receive." />
 
           <View style={s.fieldWrap}>
             <Text style={s.label}>Vehicle type *</Text>
             <View style={s.vehicleGrid}>
               {VEHICLE_TYPES.map(vt => (
                 <Pressable key={vt.key} style={[s.vehicleCard, data.vehicleType === vt.key && s.vehicleCardSel]} onPress={() => set('vehicleType', vt.key)}>
-                  <Text style={s.vehicleIcon}>{vt.icon}</Text>
                   <Text style={[s.vehicleLabel, data.vehicleType === vt.key && s.vehicleLabelSel]}>{vt.label}</Text>
                 </Pressable>
               ))}
@@ -275,7 +282,7 @@ export default function ApplyScreen() {
               <View key={doc.key} style={s.fieldWrap}>
                 <Text style={s.label}>{doc.label} *</Text>
                 <Pressable style={[s.docBtn, done ? s.docBtnDone : null, errors[doc.key] ? s.docBtnError : null]} onPress={() => pickDoc(doc.key)}>
-                  <Text style={s.docBtnIcon}>{done ? '✅' : '📷'}</Text>
+                  <Feather name={done ? 'check-circle' : 'camera'} size={20} color={done ? '#22c55e' : '#9ca3af'} style={s.docBtnIcon} />
                   <Text style={[s.docBtnText, done ? s.docBtnTextDone : null]} numberOfLines={1}>
                     {done ? (docFiles[doc.key]?.name ?? 'Previously uploaded — tap to change') : 'Tap to upload photo'}
                   </Text>
@@ -286,7 +293,10 @@ export default function ApplyScreen() {
           })}
 
           <View style={s.sectionDivider}>
-            <Text style={s.sectionTitle}>🏦 Bank account for payouts</Text>
+            <View style={s.sectionTitleRow}>
+              <Feather name="credit-card" size={16} color={JihColors.white} />
+              <Text style={s.sectionTitle}>Bank account for payouts</Text>
+            </View>
             <Text style={s.hint}>This is where your earnings will be transferred.</Text>
           </View>
 
@@ -308,7 +318,7 @@ export default function ApplyScreen() {
 
         {/* ── STEP 4: Review & Submit ────────────────────────────────────── */}
         {step === 4 && <>
-          <StepTitle icon="🎉" title="Almost there!" subtitle="Check your details, then submit your application." />
+          <StepTitle icon="" title="Almost there!" subtitle="Check your details, then submit your application." />
 
           <ReviewSection title="About you">
             <ReviewRow label="Name"      value={data.fullName} />
@@ -326,9 +336,18 @@ export default function ApplyScreen() {
           </ReviewSection>
 
           <ReviewSection title="Documents">
-            {visibleDocs.map(d => (
-              <ReviewRow key={d.key} label={d.label} value={docFiles[d.key] || uploadedUrls[d.key] ? '✅ Uploaded' : '❌ Missing'} />
-            ))}
+            {visibleDocs.map(d => {
+              const uploaded = !!(docFiles[d.key] || uploadedUrls[d.key]);
+              return (
+                <View key={d.key} style={rs.row}>
+                  <Text style={rs.label}>{d.label}</Text>
+                  <View style={rs.statusCell}>
+                    <Feather name={uploaded ? 'check-circle' : 'x-circle'} size={13} color={uploaded ? '#22c55e' : '#ef4444'} />
+                    <Text style={[rs.value, { color: uploaded ? '#22c55e' : '#ef4444' }]}>{uploaded ? 'Uploaded' : 'Missing'}</Text>
+                  </View>
+                </View>
+              );
+            })}
           </ReviewSection>
 
           <ReviewSection title="Bank">
@@ -369,7 +388,7 @@ export default function ApplyScreen() {
 function StepTitle({ icon, title, subtitle }: { icon: string; title: string; subtitle: string }) {
   return (
     <View style={st.wrap}>
-      <Text style={st.icon}>{icon}</Text>
+      {!!icon && <Text style={st.icon}>{icon}</Text>}
       <Text style={st.title}>{title}</Text>
       <Text style={st.sub}>{subtitle}</Text>
     </View>
@@ -393,7 +412,8 @@ const rs = StyleSheet.create({
   title: { color: JihColors.gold, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
   row:   { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   label: { color: JihColors.muted, fontSize: 13, flex: 1 },
-  value: { color: JihColors.white, fontSize: 13, fontWeight: '500', flex: 2, textAlign: 'right' },
+  value:      { color: JihColors.white, fontSize: 13, fontWeight: '500', flex: 2, textAlign: 'right' },
+  statusCell: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 2, justifyContent: 'flex-end' },
 });
 
 function Field({ label, hint, error, ...props }: { label: string; hint?: string; error?: string } & React.ComponentProps<typeof TextInput>) {
@@ -451,7 +471,8 @@ const s = StyleSheet.create({
   checkbox:    { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: JihColors.navyXL, justifyContent: 'center', alignItems: 'center' },
   checkboxOn:  { backgroundColor: JihColors.gold, borderColor: JihColors.gold },
   checkmark:   { color: JihColors.navy, fontWeight: '800', fontSize: 13 },
-  checkLabel:  { color: JihColors.white, fontSize: 14, flex: 1 },
+  checkLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  checkLabel:  { color: JihColors.white, fontSize: 14 },
 
   vehicleGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   vehicleCard:     { width: '47%', borderRadius: 14, borderWidth: 2, borderColor: JihColors.navyXL, backgroundColor: JihColors.navyM, padding: 16, alignItems: 'center', gap: 6 },
@@ -471,6 +492,7 @@ const s = StyleSheet.create({
   docBtnTextDone: { color: '#4ade80' },
 
   sectionDivider: { borderTopWidth: 1, borderTopColor: JihColors.navyXL, paddingTop: 16, gap: 4 },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionTitle:   { color: JihColors.white, fontSize: 16, fontWeight: '700' },
 
   bankRow:         { flexDirection: 'row', gap: 10 },

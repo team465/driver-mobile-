@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import JihDriverLogo from '@/components/JihDriverLogo';
+import { Feather } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -102,7 +104,7 @@ export default function SignUpScreen() {
       <View style={s.root}>
         <StatusBar style="light" />
         <KeyboardAvoidingView style={s.card} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <Text style={s.logo}>jih</Text>
+          <JihDriverLogo size="md" />
           <Text style={s.title}>Check your email</Text>
           <Text style={s.subtitle}>
             We sent a 6-digit verification code to{'\n'}
@@ -151,7 +153,7 @@ export default function SignUpScreen() {
           <Text style={s.backLink}>← Back</Text>
         </Pressable>
 
-        <Text style={s.logo}>jih</Text>
+        <JihDriverLogo size="md" />
         <Text style={s.title}>Create your driver account</Text>
         <Text style={s.subtitle}>Takes 2 minutes. You'll apply to drive next.</Text>
 
@@ -163,7 +165,8 @@ export default function SignUpScreen() {
         <Field label="Confirm password" placeholder="Same password again"    value={confirm}   onChangeText={setConfirm}   secureTextEntry         error={errors.confirm} />
 
         <View style={s.note}>
-          <Text style={s.noteText}>🔒 Your information is secure and only used to verify your driver account.</Text>
+          <Feather name="lock" size={14} color="#9ca3af" />
+          <Text style={s.noteText}>Your information is secure and only used to verify your driver account.</Text>
         </View>
 
         <Pressable style={[s.btn, loading && s.btnDisabled]} onPress={handleSignUp} disabled={loading}>
