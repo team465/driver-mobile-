@@ -3,6 +3,8 @@ import type { ActiveRide } from '@/api/rides';
 import type { DriverProfile, RideRequest } from '@/api/driver';
 import type { EarningsSummary, WithdrawalRequest } from '@/api/earnings';
 
+interface Profile { id: string; full_name: string | null; email: string | null; [key: string]: unknown; }
+
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 // Keep a cached token for synchronous access — updated on every auth state change
@@ -114,6 +116,13 @@ export const DriverRidesAPI = {
     request<void>('PATCH', `/api/driver/rides/${rideId}/cancel`),
   ratePassenger: (rideId: string, rating: number, review?: string) =>
     request<void>('PATCH', `/api/driver/rides/${rideId}/rate-passenger`, { rating, review }),
+};
+
+// ── Support ───────────────────────────────────────────────────────────────────
+
+export const DriverSupportAPI = {
+  submit: (subject: string, category: string, message: string) =>
+    request<{ id: string }>('POST', '/api/support', { subject, category, message }),
 };
 
 // ── Earnings ──────────────────────────────────────────────────────────────────
