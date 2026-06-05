@@ -16,24 +16,30 @@ import { JihColors } from '@/constants/theme';
 
 const CATEGORIES = ['Trip Issue', 'Payment', 'Account', 'App Bug', 'Other'];
 
+const openURL = (url: string) => {
+  Linking.openURL(url).catch(() =>
+    Alert.alert('Cannot open', `Please visit or contact:\n${url}`)
+  );
+};
+
 const CONTACTS = [
   {
     icon: 'mail'        as const,
     title: 'Email Support',
     subtitle: 'support@jisworld.com',
-    onPress: () => Linking.openURL('mailto:support@jisworld.com'),
+    onPress: () => openURL('mailto:support@jisworld.com'),
   },
   {
     icon: 'message-circle' as const,
     title: 'WhatsApp',
     subtitle: 'Chat with our team',
-    onPress: () => Linking.openURL('https://wa.me/85512345678'),
+    onPress: () => openURL('https://wa.me/85512345678'),
   },
   {
     icon: 'book-open'   as const,
     title: 'Driver Guidelines',
     subtitle: 'Read the driver handbook',
-    onPress: () => Linking.openURL('https://jisworld.com/drivers'),
+    onPress: () => openURL('https://jisworld.com/drivers'),
   },
 ];
 
