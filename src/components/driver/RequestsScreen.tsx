@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 
+import { Feather } from '@expo/vector-icons';
 import { useDriver } from '@/contexts/DriverContext';
 import { JihColors } from '@/constants/theme';
 import { formatUsd } from '@/lib/currency';
@@ -163,28 +164,35 @@ export default function RequestsScreen({ onRideAccepted }: Props) {
       {/* Pending ride request card */}
       {pendingRequest && (
         <View style={s.requestCard}>
-          <Text style={s.requestTitle}>🔔 New Ride Request!</Text>
+          <View style={s.requestTitleRow}>
+            <Feather name="bell" size={18} color={JihColors.gold} />
+            <Text style={s.requestTitle}>New Ride Request!</Text>
+          </View>
 
           {/* Badges */}
           <View style={s.badgeRow}>
             {pendingRequest.preferred_driver_id && (
               <View style={s.badge}>
-                <Text style={s.badgeText}>❤️ Direct Request</Text>
+                <Feather name="heart" size={11} color={JihColors.gold} />
+                <Text style={s.badgeText}>Direct Request</Text>
               </View>
             )}
             {pendingRequest.booking_type === 'full_day' && (
               <View style={s.badge}>
-                <Text style={s.badgeText}>🕐 Full Day Hire</Text>
+                <Feather name="clock" size={11} color={JihColors.gold} />
+                <Text style={s.badgeText}>Full Day Hire</Text>
               </View>
             )}
             {pendingRequest.booking_type === 'scheduled' && (
               <View style={s.badge}>
-                <Text style={s.badgeText}>📅 Scheduled</Text>
+                <Feather name="calendar" size={11} color={JihColors.gold} />
+                <Text style={s.badgeText}>Scheduled</Text>
               </View>
             )}
             {pendingRequest.ride_type === 'share' && (
               <View style={s.badge}>
-                <Text style={s.badgeText}>👥 Share Ride</Text>
+                <Feather name="users" size={11} color={JihColors.gold} />
+                <Text style={s.badgeText}>Share Ride</Text>
               </View>
             )}
           </View>
@@ -213,12 +221,12 @@ export default function RequestsScreen({ onRideAccepted }: Props) {
           {/* Route */}
           <View style={s.routeBlock}>
             <View style={s.routeRow}>
-              <Text style={s.routeDot}>🟢</Text>
+              <View style={[s.routeDot, { backgroundColor: '#22c55e' }]} />
               <Text style={s.routeText} numberOfLines={2}>{pendingRequest.pickup_address}</Text>
             </View>
             {pendingRequest.booking_type !== 'full_day' && pendingRequest.destination_address && (
               <View style={s.routeRow}>
-                <Text style={s.routeDot}>🔴</Text>
+                <View style={[s.routeDot, { backgroundColor: '#ef4444' }]} />
                 <Text style={s.routeText} numberOfLines={2}>{pendingRequest.destination_address}</Text>
               </View>
             )}
@@ -233,8 +241,14 @@ export default function RequestsScreen({ onRideAccepted }: Props) {
           <View style={s.statsRow}>
             {pendingRequest.booking_type !== 'full_day' && (
               <>
-                <Text style={s.statItem}>📍 {pendingRequest.distance_km?.toFixed(1)} km</Text>
-                <Text style={s.statItem}>⏱ {pendingRequest.duration_minutes} min</Text>
+                <View style={s.statItem}>
+                  <Feather name="map-pin" size={13} color={JihColors.muted} />
+                  <Text style={s.statText}>{pendingRequest.distance_km?.toFixed(1)} km</Text>
+                </View>
+                <View style={s.statItem}>
+                  <Feather name="clock" size={13} color={JihColors.muted} />
+                  <Text style={s.statText}>{pendingRequest.duration_minutes} min</Text>
+                </View>
               </>
             )}
             <Text style={s.fareAmount}>
@@ -371,10 +385,11 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: JihColors.gold + '40',
   },
-  requestTitle: { fontSize: 18, fontWeight: '700', color: JihColors.white, textAlign: 'center' },
+  requestTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  requestTitle: { fontSize: 18, fontWeight: '700', color: JihColors.white },
 
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' },
-  badge:    { backgroundColor: JihColors.gold + '20', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  badge:    { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: JihColors.gold + '20', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
   badgeText: { color: JihColors.gold, fontSize: 12, fontWeight: '600' },
 
   countdownTrack: {
@@ -395,13 +410,14 @@ const s = StyleSheet.create({
 
   routeBlock: { gap: 8 },
   routeRow:   { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  routeDot:   { fontSize: 12, marginTop: 2 },
+  routeDot:   { width: 10, height: 10, borderRadius: 5, marginTop: 4, flexShrink: 0 },
   routeText:  { flex: 1, color: JihColors.white, fontSize: 14, lineHeight: 20 },
   hireDesc:   { backgroundColor: JihColors.navyXL, borderRadius: 8, padding: 10 },
   hireDescText: { color: JihColors.muted, fontSize: 13 },
 
   statsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  statItem: { color: JihColors.muted, fontSize: 13 },
+  statItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  statText: { color: JihColors.muted, fontSize: 13 },
   fareAmount: { marginLeft: 'auto', fontSize: 22, fontWeight: '800', color: JihColors.gold },
 
   actionRow:   { flexDirection: 'row', gap: 10, marginTop: 4 },

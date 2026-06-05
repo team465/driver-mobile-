@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { SymbolView } from 'expo-symbols';
+import { Feather } from '@expo/vector-icons';
 
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,12 +26,13 @@ import SupportScreen    from '@/components/driver/SupportScreen';
 type AppStatus = 'loading' | 'no_user' | 'no_application' | 'pending' | 'rejected' | 'approved';
 type TabKey    = 'requests' | 'active' | 'earnings' | 'profile' | 'support';
 
-const TABS: { key: TabKey; label: string; sf: import('expo-symbols').SymbolViewProps['name'] }[] = [
-  { key: 'requests', label: 'Requests', sf: 'antenna.radiowaves.left.and.right' },
-  { key: 'active',   label: 'Active',   sf: 'map.fill' },
-  { key: 'earnings', label: 'Earnings', sf: 'banknote.fill' },
-  { key: 'profile',  label: 'Profile',  sf: 'person.fill' },
-  { key: 'support',  label: 'Support',  sf: 'headphones' },
+type FeatherName = React.ComponentProps<typeof Feather>['name'];
+const TABS: { key: TabKey; label: string; icon: FeatherName }[] = [
+  { key: 'requests', label: 'Requests', icon: 'radio'       },
+  { key: 'active',   label: 'Active',   icon: 'navigation-2'},
+  { key: 'earnings', label: 'Earnings', icon: 'trending-up' },
+  { key: 'profile',  label: 'Profile',  icon: 'user'        },
+  { key: 'support',  label: 'Support',  icon: 'headphones'  },
 ];
 
 export default function DriverDashboard() {
@@ -128,12 +129,11 @@ export default function DriverDashboard() {
           return (
             <Pressable key={tab.key} style={s.tabItem} onPress={() => setActiveTab(tab.key)}>
               <View>
-                <SymbolView
-                  name={tab.sf}
-                  type="monochrome"
-                  style={s.tabIcon}
-                  tintColor={active ? JihColors.gold : JihColors.muted}
-                  resizeMode="scaleAspectFit"
+                <Feather
+                  name={tab.icon}
+                  size={22}
+                  color={active ? JihColors.gold : JihColors.muted}
+                  strokeWidth={active ? 2.4 : 1.8}
                 />
                 {showDot && <View style={s.activeDot} />}
               </View>

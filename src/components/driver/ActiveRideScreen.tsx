@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import { Feather } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Alert,
@@ -138,7 +139,9 @@ export default function ActiveRideScreen({ onRideComplete, onNoRide }: Props) {
   if (!activeRide) {
     return (
       <View style={s.center}>
-        <Text style={s.noRideIcon}>🗺️</Text>
+        <View style={s.noRideIconWrap}>
+          <Feather name="navigation-2" size={32} color="#ffffff" strokeWidth={1.5} />
+        </View>
         <Text style={s.noRideTitle}>No Active Ride</Text>
         <Text style={s.noRideSubtitle}>Accept a request to get started.</Text>
         <Pressable style={s.goBtn} onPress={onNoRide}>
@@ -430,6 +433,7 @@ const s = StyleSheet.create({
 
   // No ride
   noRideIcon:     { fontSize: 56 },
+  noRideIconWrap: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   noRideTitle:    { fontSize: 20, fontWeight: '700', color: JihColors.white },
   noRideSubtitle: { fontSize: 14, color: JihColors.muted, textAlign: 'center' },
   goBtn: {
